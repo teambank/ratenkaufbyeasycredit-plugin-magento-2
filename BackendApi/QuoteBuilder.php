@@ -16,7 +16,7 @@ use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
 use Magento\Store\Model\ScopeInterface;
 use Netzkollektiv\EasyCredit\BackendApi\Quote\AddressBuilder;
 use Netzkollektiv\EasyCredit\BackendApi\Quote\CustomerBuilder;
-
+use Netzkollektiv\EasyCredit\Helper\Payment as PaymentHelper;
 use Netzkollektiv\EasyCredit\BackendApi\Quote\ItemBuilder;
 use Netzkollektiv\EasyCredit\BackendApi\Quote\SystemBuilder;
 use Teambank\RatenkaufByEasyCreditApiV3 as Api;
@@ -38,6 +38,8 @@ class QuoteBuilder
 
     private StorageFactory $storageFactory;
 
+    private PaymentHelper $paymentHelper;
+
     private AddressBuilder $addressBuilder;
 
     private ItemBuilder $itemBuilder;
@@ -55,6 +57,7 @@ class QuoteBuilder
         ScopeConfigInterface $scopeConfig,
         UrlInterface $url,
         StorageFactory $storageFactory,
+        PaymentHelper $paymentHelper,
         AddressBuilder $addressBuilder,
         ItemBuilder $itemBuilder,
         SystemBuilder $systemBuilder,
@@ -66,6 +69,7 @@ class QuoteBuilder
         $this->scopeConfig = $scopeConfig;
         $this->url = $url;
         $this->storageFactory = $storageFactory;
+        $this->paymentHelper = $paymentHelper;
 
         $this->addressBuilder = $addressBuilder;
         $this->itemBuilder = $itemBuilder;
@@ -91,6 +95,12 @@ class QuoteBuilder
     private function getId()
     {
         return $this->getQuote()->getId();
+    }
+
+    public function getPaymentType() {
+        return $this->paymentHelper->getTypeByMethod(
+            $this->getQuote()->getPayment()->getMethod()
+        );
     }
 
     private function getShippingMethod()
@@ -216,6 +226,7 @@ class QuoteBuilder
     {
         return new Api\Model\Transaction(
             [
+                'paymentType' => $this->getPaymentType(),
                 'financingTerm' => $this->getDuration(),
                 'orderDetails' => new Api\Model\OrderDetails(
                     [
