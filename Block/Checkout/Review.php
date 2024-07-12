@@ -21,6 +21,7 @@ use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\Quote\Address\Rate;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Tax\Helper\Data as TaxHelper;
+use Netzkollektiv\EasyCredit\Helper\Payment as PaymentHelper;
 
 /**
  * Class Review
@@ -28,8 +29,8 @@ use Magento\Tax\Helper\Data as TaxHelper;
  * @package Netzkollektiv\EasyCredit\Block\Checkout
  * @method setPlaceOrderUrl(string $url)
  * @method getPlaceOrderUrl()
- * @method setPaymentMethodTitle(string $title)
- * @method getPaymentMethodTitle()
+ * @method setPaymentMethod($methodInstance)
+ * @method getPaymentMethod()
  * @method setShippingRateRequired(bool $required)
  * @method getShippingRateRequired()
  * @method setShippingRateGroups(array $groups)
@@ -61,6 +62,8 @@ class Review extends Template
 
     private PriceCurrencyInterface $priceCurrency;
 
+    private PaymentHelper $paymentHelper;
+
     /**
      * @param mixed $taxHelper
      */
@@ -69,11 +72,14 @@ class Review extends Template
         \Magento\Tax\Helper\Data $taxHelper,
         Config $addressConfig,
         PriceCurrencyInterface $priceCurrency,
+        PaymentHelper $paymentHelper,
         array $data = []
     ) {
         $this->priceCurrency = $priceCurrency;
         $this->taxHelper = $taxHelper;
         $this->addressConfig = $addressConfig;
+        $this->paymentHelper = $paymentHelper;
+
         parent::__construct($context, $data);
     }
 
@@ -165,7 +171,7 @@ class Review extends Template
     public function renderShippingRateOption($rate, $format = '%s - %s%s', $inclTaxFormat = ' (%s %s)'): string
     {
         $price = null;
-        if (! $rate) {
+        if (!$rate) {
             return '';
         }
 
@@ -183,7 +189,7 @@ class Review extends Template
                 return sprintf($format, $this->escapeHtml($rate->getMethodTitle()), $price, $renderedInclTax);
             }
 
-            if (! $this->taxHelper->displayShippingBothPrices()) {
+            if (!$this->taxHelper->displayShippingBothPrices()) {
                 return sprintf($format, $this->escapeHtml($rate->getMethodTitle()), $price, $renderedInclTax);
             }
 
@@ -265,7 +271,7 @@ class Review extends Template
     protected function _beforeToHtml()
     {
         $methodInstance = $this->quote->getPayment()->getMethodInstance();
-        $this->setPaymentMethodTitle($methodInstance->getTitle());
+        $this->setPaymentMethod($methodInstance);
 
         $this->setShippingRateRequired(true);
         if ($this->quote->getIsVirtual()) {
@@ -303,6 +309,11 @@ class Review extends Template
         );
 
         return parent::_beforeToHtml();
+    }
+
+    public function getPaymentHelper()
+    {
+        return $this->paymentHelper;
     }
 
     public function getPaymentPlan()
