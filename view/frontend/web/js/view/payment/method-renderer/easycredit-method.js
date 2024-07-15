@@ -99,10 +99,12 @@ define([
     getCheckoutMethod: function () {
       return customer.isLoggedIn() ? "customer" : "guest";
     },
-    getIsAvailableUri: function (quote) {
+    getIsAvailableUri: function () {
       var method = this.getCheckoutMethod();
 
-      var params = {};
+      var params = {
+        paymentType: this.getPaymentType(),
+      };
       if (method == "guest") {
         params.quoteId = quote.getQuoteId();
       }
@@ -113,7 +115,7 @@ define([
       var uri = urlBuilder.createUrl(urls[method], params);
       return uri;
     },
-    getCheckoutStartUri: function (quote) {
+    getCheckoutStartUri: function () {
       var method = this.getCheckoutMethod();
 
       var params = {};
@@ -134,7 +136,11 @@ define([
       var uri = this.getCheckoutStartUri(quote);
 
       storage
-        .post(uri)
+        .post(uri, JSON.stringify({
+          checkoutData: {
+            paymentType: this.getPaymentType()
+          },
+        }))
         .done(
           function (data) {
             if (data.redirect_url) {
@@ -188,7 +194,11 @@ define([
       var uri = this.getIsAvailableUri(quote);
 
       storage
-        .get(uri)
+        .post(uri, JSON.stringify({
+          checkoutData: {
+            paymentType: this.getPaymentType()
+          },
+        }))
         .done(
           function (data) {
             fullScreenLoader.stopLoader(true);
